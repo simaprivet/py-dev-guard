@@ -1,0 +1,28 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ${CLAUDE_PLUGIN_ROOT}/hooks/check_python_syntax.py",
+            "statusMessage": "Проверка синтаксиса Python..."
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ${CLAUDE_PLUGIN_ROOT}/hooks/protect_gitignored.py",
+            "statusMessage": "Проверка .gitignore..."
+          }
+        ]
+      }
+    ]
+  }
+}
