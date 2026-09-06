@@ -43,20 +43,52 @@
 
 |  | `.claude/` в проекте | Этот плагин |
 |---|---|---|
-| Где живёт | `<project>/.claude/` | `~/.claude/skills/py-dev-guard/` — вне любого проекта |
-| Когда активен | Только когда Claude Code запущен в этом конкретном проекте | В любом проекте этого пользователя, автоматически |
+| Где живёт | `<project>/.claude/` | Отдельный репозиторий, ставится через `/plugin install` в любой проект |
+| Когда активен | Только когда Claude Code запущен в этом конкретном проекте | В каждом проекте, где плагин установлен через `/plugin` |
 | Пути в хуках | Относительно проекта (`.claude/hooks/x.py`) | Через `${CLAUDE_PLUGIN_ROOT}` — не зависят от того, где физически лежит плагин |
-| Манифест | Нет, просто набор файлов | `.claude-plugin/plugin.json` — имя, версия, автор |
+| Манифест | Нет, просто набор файлов | `.claude-plugin/plugin.json` + `.claude-plugin/marketplace.json` |
 | Версионирование | Нет | `claude plugin tag` делает git-тег `py-dev-guard--vX.Y.Z` |
 
-## Установка в другом проекте / у другого пользователя
+## Установка
 
-Плагин лежит в `~/.claude/skills/py-dev-guard/` — Claude Code
-подхватывает такие директории автоматически при старте сессии
-(`py-dev-guard@skills-dir`), без отдельного шага install, в любом
-проекте. Чтобы отключить: `claude plugin disable
-py-dev-guard@skills-dir`. Чтобы перенести к другому пользователю —
-склонировать этот репозиторий в его `~/.claude/skills/py-dev-guard/`.
+Плагин — полноценный marketplace-плагин Claude Code: репозиторий
+одновременно является и плагином (`.claude-plugin/plugin.json`), и
+marketplace для него самого (`.claude-plugin/marketplace.json`, имя
+marketplace — `simaprivet-tools`).
+
+### Из локального пути
+
+```
+/plugin marketplace add /home/sima/.claude/skills/py-dev-guard
+/plugin install py-dev-guard@simaprivet-tools
+```
+
+(или относительный путь до клона репозитория на диске другого
+пользователя).
+
+### Из GitHub
+
+```
+/plugin marketplace add simaprivet/py-dev-guard
+/plugin install py-dev-guard@simaprivet-tools
+```
+
+### Проверка, что всё подхватилось
+
+- `/plugin` — в списке установленных плагинов должен быть
+  `py-dev-guard`, включённый (enabled).
+- Там же в деталях плагина должны быть видны три активных хука
+  (`PostToolUse: check_python_syntax.py`, `PreToolUse:
+  protect_gitignored.py`, `PreToolUse: run_tests_before_commit.py`).
+- Субагент должен быть доступен как `py-dev-guard:reviewer` (виден в
+  списке агентов, вызывается из `/check` через Agent).
+- Команда `/check` должна появиться в автодополнении слэш-команд как
+  `/py-dev-guard:check` (или `/check`, если конфликтов имён нет).
+
+Обновление плагина после изменений в репозитории (свежий клон/пул) —
+`/plugin marketplace update simaprivet-tools`. Отключить: `/plugin
+uninstall py-dev-guard`. Убрать marketplace целиком: `/plugin
+marketplace remove simaprivet-tools`.
 
 ## Что намеренно не вошло
 

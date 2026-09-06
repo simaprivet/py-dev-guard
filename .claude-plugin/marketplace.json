@@ -1,0 +1,15 @@
+{
+  "name": "simaprivet-tools",
+  "description": "Личные плагины Claude Code от simaprivet",
+  "owner": {
+    "name": "simaprivet",
+    "email": "simabovan@mail.ru"
+  },
+  "plugins": [
+    {
+      "name": "py-dev-guard",
+      "source": "./",
+      "description": "Python syntax check, diff review, and gitignore write-protection for Claude Code"
+    }
+  ]
+}
