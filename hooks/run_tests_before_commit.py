@@ -20,21 +20,43 @@ if not re.search(r"\bgit\s+(\S+\s+)*commit\b", command):
 
 project_root = Path.cwd().resolve()
 
-venv = os.environ.get("VIRTUAL_ENV")
-pytest_bin = None
-if venv:
-    candidate = Path(venv, "bin", "pytest")
-    if candidate.exists():
-        pytest_bin = str(candidate)
-if pytest_bin is None:
-    pytest_bin = shutil.which("pytest")
 
-if not pytest_bin:
-    sys.exit(0)  # pytest не установлен — не мешаем коммиту
+def candidate_pythons(root: Path):
+    for venv_name in (".venv", "venv"):
+        yield root / venv_name / "bin" / "python"
+    venv = os.environ.get("VIRTUAL_ENV")
+    if venv:
+        yield Path(venv, "bin", "python")
+    for name in ("python3", "python"):
+        found = shutil.which(name)
+        if found:
+            yield Path(found)
+
+
+def has_pytest(python_bin: Path) -> bool:
+    try:
+        check = subprocess.run(
+            [str(python_bin), "-c", "import pytest"],
+            capture_output=True,
+            timeout=10,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+    return check.returncode == 0
+
+
+python_bin = None
+for candidate in candidate_pythons(project_root):
+    if candidate.exists() and has_pytest(candidate):
+        python_bin = candidate
+        break
+
+if python_bin is None:
+    sys.exit(0)  # pytest не установлен ни в одном найденном интерпретаторе — не мешаем коммиту
 
 try:
     result = subprocess.run(
-        [pytest_bin, "-q"],
+        [str(python_bin), "-m", "pytest", "-q"],
         cwd=project_root,
         capture_output=True,
         text=True,
