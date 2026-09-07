@@ -13,6 +13,7 @@ import sys
 
 MAX_DIFF_CHARS = 200_000
 TIMEOUT_SECONDS = 300
+FETCH_TIMEOUT_SECONDS = 15
 
 REVIEW_PROMPT = """\
 Проверь приведённый ниже дифф (git diff) и найди только:
@@ -35,16 +36,31 @@ REVIEW_PROMPT = """\
 """
 
 
-def run_git(args):
+def run_git(args, timeout=None):
     return subprocess.run(
         ["git", *args],
         capture_output=True,
         text=True,
+        errors="replace",
+        timeout=timeout,
     )
 
 
 def resolve_base_ref():
-    for candidate in ("master", "origin/master"):
+    try:
+        fetch = run_git(["fetch", "--quiet", "origin", "master"], timeout=FETCH_TIMEOUT_SECONDS)
+        fetch_ok = fetch.returncode == 0
+    except (subprocess.TimeoutExpired, OSError):
+        fetch_ok = False
+
+    if not fetch_ok:
+        print(
+            "Предупреждение: git fetch origin master не удался (нет сети?) — "
+            "сравниваю с локальной веткой master, дифф может быть устаревшим.",
+            file=sys.stderr,
+        )
+
+    for candidate in ("origin/master", "master"):
         check = run_git(["rev-parse", "--verify", "--quiet", candidate])
         if check.returncode == 0:
             return candidate
@@ -57,6 +73,12 @@ def fail(message, code=1):
 
 
 def main():
+    if shutil.which("git") is None:
+        fail(
+            "git не найден в PATH — установи git или добавь его в PATH, "
+            "чтобы запускать это ревью."
+        )
+
     branch_result = run_git(["rev-parse", "--abbrev-ref", "HEAD"])
     if branch_result.returncode != 0:
         fail("Не удалось определить текущую ветку — это точно git-репозиторий?")
@@ -100,6 +122,7 @@ def main():
             input=diff_text,
             capture_output=True,
             text=True,
+            errors="replace",
             timeout=TIMEOUT_SECONDS,
         )
     except subprocess.TimeoutExpired:
