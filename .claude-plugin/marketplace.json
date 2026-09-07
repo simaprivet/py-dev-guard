@@ -9,7 +9,7 @@
     {
       "name": "py-dev-guard",
       "source": "./",
-      "description": "Python syntax check, diff review, and gitignore write-protection for Claude Code"
+      "description": "Python syntax check, diff review (interactive and pre-push), and gitignore write-protection for Claude Code"
     }
   ]
 }
