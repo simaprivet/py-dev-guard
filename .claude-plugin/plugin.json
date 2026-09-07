@@ -1,7 +1,7 @@
 {
   "$schema": "https://anthropic.com/claude-code/plugin.schema.json",
   "name": "py-dev-guard",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Python syntax check, diff review (interactive and pre-push), and gitignore write-protection for Claude Code",
   "author": {
     "name": "simaprivet",
